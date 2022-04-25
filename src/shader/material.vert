@@ -1,6 +1,8 @@
+#include <fog_pars_vertex>
+
 varying float elevation;
 
-const float one = 1.0 / 255.0;
+const float SCALE = 0.8;
 
 vec2 rand(vec2 st){
     st = vec2(dot(st,vec2(127.1,311.7)),
@@ -16,14 +18,14 @@ float sigmoid(float x) {
     return 2.0 / (1.0 + pow(2.0, -15.0 * x)) - 1.0;
 }
 
-float getOctave(float scale) {
-    vec2 octPos = floor(position.xy / scale);
-    vec2 tl = rand(octPos);
-    vec2 tr = rand(octPos + vec2(1., 0.));
-    vec2 bl = rand(octPos + vec2(0., 1.));
-    vec2 br = rand(octPos + vec2(1., 1.));
+float perlin(float scale, vec2 globalPos) {
+    vec2 pos = floor(globalPos.xy / scale);
+    vec2 tl = rand(pos);
+    vec2 tr = rand(pos + vec2(1., 0.));
+    vec2 bl = rand(pos + vec2(0., 1.));
+    vec2 br = rand(pos + vec2(1., 1.));
 
-    vec2 offLow = (position.xy / scale) - octPos;
+    vec2 offLow = (globalPos.xy / scale) - pos;
     vec2 offHigh = 1.0 - offLow;
 
     float n0, n1, i0, i1;
@@ -39,12 +41,16 @@ float getOctave(float scale) {
 }
 
 void main() {
-    float scale = .5;
-    float el = (sigmoid(getOctave(scale * 8.0))) * 2.0;
-    float el2 = (getOctave(scale * 3.0)) * 0.75;
-    float el3 = (getOctave(scale * 0.8)) * 0.2;
-    elevation = el + el2 + el3;
+    vec4 globalPos = modelMatrix * vec4(position, 1.0);
+    float oct1 = sigmoid(perlin(SCALE * 8.0, globalPos.xy)) * 2.0;
+    float oct2 = perlin(SCALE * 3.0, globalPos.xy) * 0.75;
+    float oct3 = perlin(SCALE * 0.8, globalPos.xy) * 0.2;
+    elevation = oct1 + oct2 + oct3;
     gl_Position = projectionMatrix 
                 * modelViewMatrix
                 * vec4(position.xy, elevation, 1.0);
+
+    
+    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+    #include <fog_vertex>
 }

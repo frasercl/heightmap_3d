@@ -1,3 +1,5 @@
+#include <fog_pars_fragment>
+
 varying float elevation;
 
 const vec3 colors[7] = vec3[7](
@@ -19,4 +21,5 @@ void main() {
         vec3 color = mix(colors[index], colors[index + 1], between);
         gl_FragColor = vec4(color, 1.0);
     }
+    #include <fog_fragment>
 }
